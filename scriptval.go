@@ -2,23 +2,23 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcchain
+package rddchain
 
 import (
 	"fmt"
 	"math"
 	"runtime"
 
-	"github.com/conformal/btcscript"
-	"github.com/conformal/btcutil"
-	"github.com/conformal/btcwire"
+	"github.com/reddcoin-project/rddscript"
+	"github.com/reddcoin-project/rddutil"
+	"github.com/reddcoin-project/rddwire"
 )
 
 // txValidateItem holds a transaction along with which input to validate.
 type txValidateItem struct {
 	txInIndex int
-	txIn      *btcwire.TxIn
-	tx        *btcutil.Tx
+	txIn      *rddwire.TxIn
+	tx        *rddutil.Tx
 }
 
 // txValidator provides a type which asynchronously validates transaction
@@ -29,7 +29,7 @@ type txValidator struct {
 	quitChan     chan struct{}
 	resultChan   chan error
 	txStore      TxStore
-	flags        btcscript.ScriptFlags
+	flags        rddscript.ScriptFlags
 }
 
 // sendResult sends the result of a script pair validation on the internal
@@ -83,7 +83,7 @@ out:
 			// Create a new script engine for the script pair.
 			sigScript := txIn.SignatureScript
 			pkScript := originMsgTx.TxOut[originTxIndex].PkScript
-			engine, err := btcscript.NewScript(sigScript, pkScript,
+			engine, err := rddscript.NewScript(sigScript, pkScript,
 				txVI.txInIndex, txVI.tx.MsgTx(), v.flags)
 			if err != nil {
 				str := fmt.Sprintf("failed to parse input "+
@@ -179,7 +179,7 @@ func (v *txValidator) Validate(items []*txValidateItem) error {
 
 // newTxValidator returns a new instance of txValidator to be used for
 // validating transaction scripts asynchronously.
-func newTxValidator(txStore TxStore, flags btcscript.ScriptFlags) *txValidator {
+func newTxValidator(txStore TxStore, flags rddscript.ScriptFlags) *txValidator {
 	return &txValidator{
 		validateChan: make(chan *txValidateItem),
 		quitChan:     make(chan struct{}),
@@ -191,7 +191,7 @@ func newTxValidator(txStore TxStore, flags btcscript.ScriptFlags) *txValidator {
 
 // ValidateTransactionScripts validates the scripts for the passed transaction
 // using multiple goroutines.
-func ValidateTransactionScripts(tx *btcutil.Tx, txStore TxStore, flags btcscript.ScriptFlags) error {
+func ValidateTransactionScripts(tx *rddutil.Tx, txStore TxStore, flags rddscript.ScriptFlags) error {
 	// Collect all of the transaction inputs and required information for
 	// validation.
 	txIns := tx.MsgTx().TxIn
@@ -222,12 +222,12 @@ func ValidateTransactionScripts(tx *btcutil.Tx, txStore TxStore, flags btcscript
 
 // checkBlockScripts executes and validates the scripts for all transactions in
 // the passed block.
-func checkBlockScripts(block *btcutil.Block, txStore TxStore) error {
+func checkBlockScripts(block *rddutil.Block, txStore TxStore) error {
 	// Setup the script validation flags.  Blocks created after the BIP0016
 	// activation time need to have the pay-to-script-hash checks enabled.
-	var flags btcscript.ScriptFlags
-	if block.MsgBlock().Header.Timestamp.After(btcscript.Bip16Activation) {
-		flags |= btcscript.ScriptBip16
+	var flags rddscript.ScriptFlags
+	if block.MsgBlock().Header.Timestamp.After(rddscript.Bip16Activation) {
+		flags |= rddscript.ScriptBip16
 	}
 
 	// Collect all of the transaction inputs and required information for

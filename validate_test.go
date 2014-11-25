@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcchain_test
+package rddchain_test
 
 import (
 	"math"
@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/conformal/btcchain"
-	"github.com/conformal/btcnet"
-	"github.com/conformal/btcutil"
-	"github.com/conformal/btcwire"
+	"github.com/reddcoin-project/rddchain"
+	"github.com/reddcoin-project/rddnet"
+	"github.com/reddcoin-project/rddutil"
+	"github.com/reddcoin-project/rddwire"
 )
 
 // TestCheckConnectBlock tests the CheckConnectBlock function to ensure it
@@ -34,8 +34,8 @@ func TestCheckConnectBlock(t *testing.T) {
 
 	// The genesis block should fail to connect since it's already
 	// inserted.
-	genesisBlock := btcnet.MainNetParams.GenesisBlock
-	err = chain.CheckConnectBlock(btcutil.NewBlock(genesisBlock))
+	genesisBlock := rddnet.MainNetParams.GenesisBlock
+	err = chain.CheckConnectBlock(rddutil.NewBlock(genesisBlock))
 	if err == nil {
 		t.Errorf("CheckConnectBlock: Did not received expected error")
 	}
@@ -44,10 +44,10 @@ func TestCheckConnectBlock(t *testing.T) {
 // TestCheckBlockSanity tests the CheckBlockSanity function to ensure it works
 // as expected.
 func TestCheckBlockSanity(t *testing.T) {
-	powLimit := btcnet.MainNetParams.PowLimit
-	block := btcutil.NewBlock(&Block100000)
-	timeSource := btcchain.NewMedianTime()
-	err := btcchain.CheckBlockSanity(block, powLimit, timeSource)
+	powLimit := rddnet.MainNetParams.PowLimit
+	block := rddutil.NewBlock(&Block100000)
+	timeSource := rddchain.NewMedianTime()
+	err := rddchain.CheckBlockSanity(block, powLimit, timeSource)
 	if err != nil {
 		t.Errorf("CheckBlockSanity: %v", err)
 	}
@@ -56,7 +56,7 @@ func TestCheckBlockSanity(t *testing.T) {
 	// second fails.
 	timestamp := block.MsgBlock().Header.Timestamp
 	block.MsgBlock().Header.Timestamp = timestamp.Add(time.Nanosecond)
-	err = btcchain.CheckBlockSanity(block, powLimit, timeSource)
+	err = rddchain.CheckBlockSanity(block, powLimit, timeSource)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: error is nil when it shouldn't be")
 	}
@@ -67,17 +67,17 @@ func TestCheckBlockSanity(t *testing.T) {
 // and handled properly.
 func TestCheckSerializedHeight(t *testing.T) {
 	// Create an empty coinbase template to be used in the tests below.
-	coinbaseOutpoint := btcwire.NewOutPoint(&btcwire.ShaHash{}, math.MaxUint32)
-	coinbaseTx := btcwire.NewMsgTx()
+	coinbaseOutpoint := rddwire.NewOutPoint(&rddwire.ShaHash{}, math.MaxUint32)
+	coinbaseTx := rddwire.NewMsgTx()
 	coinbaseTx.Version = 2
-	coinbaseTx.AddTxIn(btcwire.NewTxIn(coinbaseOutpoint, nil))
+	coinbaseTx.AddTxIn(rddwire.NewTxIn(coinbaseOutpoint, nil))
 
 	// Expected rule errors.
-	missingHeightError := btcchain.RuleError{
-		ErrorCode: btcchain.ErrMissingCoinbaseHeight,
+	missingHeightError := rddchain.RuleError{
+		ErrorCode: rddchain.ErrMissingCoinbaseHeight,
 	}
-	badHeightError := btcchain.RuleError{
-		ErrorCode: btcchain.ErrBadCoinbaseHeight,
+	badHeightError := rddchain.RuleError{
+		ErrorCode: rddchain.ErrBadCoinbaseHeight,
 	}
 
 	tests := []struct {
@@ -107,17 +107,17 @@ func TestCheckSerializedHeight(t *testing.T) {
 	for i, test := range tests {
 		msgTx := coinbaseTx.Copy()
 		msgTx.TxIn[0].SignatureScript = test.sigScript
-		tx := btcutil.NewTx(msgTx)
+		tx := rddutil.NewTx(msgTx)
 
-		err := btcchain.TstCheckSerializedHeight(tx, test.wantHeight)
+		err := rddchain.TstCheckSerializedHeight(tx, test.wantHeight)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
 			t.Errorf("checkSerializedHeight #%d wrong error type "+
 				"got: %v <%T>, want: %T", i, err, err, test.err)
 			continue
 		}
 
-		if rerr, ok := err.(btcchain.RuleError); ok {
-			trerr := test.err.(btcchain.RuleError)
+		if rerr, ok := err.(rddchain.RuleError); ok {
+			trerr := test.err.(rddchain.RuleError)
 			if rerr.ErrorCode != trerr.ErrorCode {
 				t.Errorf("checkSerializedHeight #%d wrong "+
 					"error code got: %v, want: %v", i,
@@ -131,16 +131,16 @@ func TestCheckSerializedHeight(t *testing.T) {
 
 // Block100000 defines block 100,000 of the block chain.  It is used to
 // test Block operations.
-var Block100000 = btcwire.MsgBlock{
-	Header: btcwire.BlockHeader{
+var Block100000 = rddwire.MsgBlock{
+	Header: rddwire.BlockHeader{
 		Version: 1,
-		PrevBlock: btcwire.ShaHash([32]byte{ // Make go vet happy.
+		PrevBlock: rddwire.ShaHash([32]byte{ // Make go vet happy.
 			0x50, 0x12, 0x01, 0x19, 0x17, 0x2a, 0x61, 0x04,
 			0x21, 0xa6, 0xc3, 0x01, 0x1d, 0xd3, 0x30, 0xd9,
 			0xdf, 0x07, 0xb6, 0x36, 0x16, 0xc2, 0xcc, 0x1f,
 			0x1c, 0xd0, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
 		}), // 000000000002d01c1fccc21636b607dfd930d31d01c3a62104612a1719011250
-		MerkleRoot: btcwire.ShaHash([32]byte{ // Make go vet happy.
+		MerkleRoot: rddwire.ShaHash([32]byte{ // Make go vet happy.
 			0x66, 0x57, 0xa9, 0x25, 0x2a, 0xac, 0xd5, 0xc0,
 			0xb2, 0x94, 0x09, 0x96, 0xec, 0xff, 0x95, 0x22,
 			0x28, 0xc3, 0x06, 0x7c, 0xc3, 0x8d, 0x48, 0x85,
@@ -150,13 +150,13 @@ var Block100000 = btcwire.MsgBlock{
 		Bits:      0x1b04864c,               // 453281356
 		Nonce:     0x10572b0f,               // 274148111
 	},
-	Transactions: []*btcwire.MsgTx{
+	Transactions: []*rddwire.MsgTx{
 		{
 			Version: 1,
-			TxIn: []*btcwire.TxIn{
+			TxIn: []*rddwire.TxIn{
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash:  btcwire.ShaHash{},
+					PreviousOutPoint: rddwire.OutPoint{
+						Hash:  rddwire.ShaHash{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{
@@ -165,7 +165,7 @@ var Block100000 = btcwire.MsgBlock{
 					Sequence: 0xffffffff,
 				},
 			},
-			TxOut: []*btcwire.TxOut{
+			TxOut: []*rddwire.TxOut{
 				{
 					Value: 0x12a05f200, // 5000000000
 					PkScript: []byte{
@@ -187,10 +187,10 @@ var Block100000 = btcwire.MsgBlock{
 		},
 		{
 			Version: 1,
-			TxIn: []*btcwire.TxIn{
+			TxIn: []*rddwire.TxIn{
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{ // Make go vet happy.
+					PreviousOutPoint: rddwire.OutPoint{
+						Hash: rddwire.ShaHash([32]byte{ // Make go vet happy.
 							0x03, 0x2e, 0x38, 0xe9, 0xc0, 0xa8, 0x4c, 0x60,
 							0x46, 0xd6, 0x87, 0xd1, 0x05, 0x56, 0xdc, 0xac,
 							0xc4, 0x1d, 0x27, 0x5e, 0xc5, 0x5f, 0xc0, 0x07,
@@ -224,7 +224,7 @@ var Block100000 = btcwire.MsgBlock{
 					Sequence: 0xffffffff,
 				},
 			},
-			TxOut: []*btcwire.TxOut{
+			TxOut: []*rddwire.TxOut{
 				{
 					Value: 0x2123e300, // 556000000
 					PkScript: []byte{
@@ -256,10 +256,10 @@ var Block100000 = btcwire.MsgBlock{
 		},
 		{
 			Version: 1,
-			TxIn: []*btcwire.TxIn{
+			TxIn: []*rddwire.TxIn{
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{ // Make go vet happy.
+					PreviousOutPoint: rddwire.OutPoint{
+						Hash: rddwire.ShaHash([32]byte{ // Make go vet happy.
 							0xc3, 0x3e, 0xbf, 0xf2, 0xa7, 0x09, 0xf1, 0x3d,
 							0x9f, 0x9a, 0x75, 0x69, 0xab, 0x16, 0xa3, 0x27,
 							0x86, 0xaf, 0x7d, 0x7e, 0x2d, 0xe0, 0x92, 0x65,
@@ -292,7 +292,7 @@ var Block100000 = btcwire.MsgBlock{
 					Sequence: 0xffffffff,
 				},
 			},
-			TxOut: []*btcwire.TxOut{
+			TxOut: []*rddwire.TxOut{
 				{
 					Value: 0xf4240, // 1000000
 					PkScript: []byte{
@@ -324,10 +324,10 @@ var Block100000 = btcwire.MsgBlock{
 		},
 		{
 			Version: 1,
-			TxIn: []*btcwire.TxIn{
+			TxIn: []*rddwire.TxIn{
 				{
-					PreviousOutPoint: btcwire.OutPoint{
-						Hash: btcwire.ShaHash([32]byte{ // Make go vet happy.
+					PreviousOutPoint: rddwire.OutPoint{
+						Hash: rddwire.ShaHash([32]byte{ // Make go vet happy.
 							0x0b, 0x60, 0x72, 0xb3, 0x86, 0xd4, 0xa7, 0x73,
 							0x23, 0x52, 0x37, 0xf6, 0x4c, 0x11, 0x26, 0xac,
 							0x3b, 0x24, 0x0c, 0x84, 0xb9, 0x17, 0xa3, 0x90,
@@ -361,7 +361,7 @@ var Block100000 = btcwire.MsgBlock{
 					Sequence: 0xffffffff,
 				},
 			},
-			TxOut: []*btcwire.TxOut{
+			TxOut: []*rddwire.TxOut{
 				{
 					Value: 0xf4240, // 1000000
 					PkScript: []byte{

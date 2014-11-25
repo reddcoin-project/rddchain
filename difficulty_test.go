@@ -2,13 +2,13 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcchain_test
+package rddchain_test
 
 import (
 	"math/big"
 	"testing"
 
-	"github.com/conformal/btcchain"
+	"github.com/reddcoin-project/rddchain"
 )
 
 func TestBigToCompact(t *testing.T) {
@@ -22,7 +22,7 @@ func TestBigToCompact(t *testing.T) {
 
 	for x, test := range tests {
 		n := big.NewInt(test.in)
-		r := btcchain.BigToCompact(n)
+		r := rddchain.BigToCompact(n)
 		if r != test.out {
 			t.Errorf("TestBigToCompact test #%d failed: got %d want %d\n",
 				x, r, test.out)
@@ -40,7 +40,7 @@ func TestCompactToBig(t *testing.T) {
 	}
 
 	for x, test := range tests {
-		n := btcchain.CompactToBig(test.in)
+		n := rddchain.CompactToBig(test.in)
 		want := big.NewInt(test.out)
 		if n.Cmp(want) != 0 {
 			t.Errorf("TestCompactToBig test #%d failed: got %d want %d\n",
@@ -61,7 +61,7 @@ func TestCalcWork(t *testing.T) {
 	for x, test := range tests {
 		bits := uint32(test.in)
 
-		r := btcchain.CalcWork(bits)
+		r := rddchain.CalcWork(bits)
 		if r.Int64() != test.out {
 			t.Errorf("TestCalcWork test #%d failed: got %v want %d\n",
 				x, r.Int64(), test.out)

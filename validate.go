@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcchain
+package rddchain
 
 import (
 	"encoding/binary"
@@ -11,17 +11,17 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/conformal/btcdb"
-	"github.com/conformal/btcnet"
-	"github.com/conformal/btcscript"
-	"github.com/conformal/btcutil"
-	"github.com/conformal/btcwire"
+	"github.com/reddcoin-project/rdddb"
+	"github.com/reddcoin-project/rddnet"
+	"github.com/reddcoin-project/rddscript"
+	"github.com/reddcoin-project/rddutil"
+	"github.com/reddcoin-project/rddwire"
 )
 
 const (
 	// MaxSigOpsPerBlock is the maximum number of signature operations
 	// allowed for a block.  It is a fraction of the max block payload size.
-	MaxSigOpsPerBlock = btcwire.MaxBlockPayload / 50
+	MaxSigOpsPerBlock = rddwire.MaxBlockPayload / 50
 
 	// lockTimeThreshold is the number below which a lock time is
 	// interpreted to be a block number.  Since an average of one block
@@ -51,7 +51,7 @@ const (
 
 	// baseSubsidy is the starting subsidy amount for mined blocks.  This
 	// value is halved every SubsidyHalvingInterval blocks.
-	baseSubsidy = 50 * btcutil.SatoshiPerBitcoin
+	baseSubsidy = 50 * rddutil.SatoshiPerBitcoin
 
 	// CoinbaseMaturity is the number of blocks required before newly
 	// mined bitcoins (coinbase transactions) can be spent.
@@ -64,10 +64,10 @@ var (
 	// constant is used because the tests need the ability to modify it.
 	coinbaseMaturity = int64(CoinbaseMaturity)
 
-	// zeroHash is the zero value for a btcwire.ShaHash and is defined as
+	// zeroHash is the zero value for a rddwire.ShaHash and is defined as
 	// a package level variable to avoid the need to create a new instance
 	// every time a check is needed.
-	zeroHash = &btcwire.ShaHash{}
+	zeroHash = &rddwire.ShaHash{}
 
 	// block91842Hash is one of the two nodes which violate the rules
 	// set forth in BIP0030.  It is defined as a package level variable to
@@ -82,7 +82,7 @@ var (
 
 // isNullOutpoint determines whether or not a previous transaction output point
 // is set.
-func isNullOutpoint(outpoint *btcwire.OutPoint) bool {
+func isNullOutpoint(outpoint *rddwire.OutPoint) bool {
 	if outpoint.Index == math.MaxUint32 && outpoint.Hash.IsEqual(zeroHash) {
 		return true
 	}
@@ -94,7 +94,7 @@ func isNullOutpoint(outpoint *btcwire.OutPoint) bool {
 // represented in the block chain by a transaction with a single input that has
 // a previous output transaction index set to the maximum value along with a
 // zero hash.
-func IsCoinBase(tx *btcutil.Tx) bool {
+func IsCoinBase(tx *rddutil.Tx) bool {
 	msgTx := tx.MsgTx()
 
 	// A coin base must only have one transaction input.
@@ -113,7 +113,7 @@ func IsCoinBase(tx *btcutil.Tx) bool {
 }
 
 // IsFinalizedTransaction determines whether or not a transaction is finalized.
-func IsFinalizedTransaction(tx *btcutil.Tx, blockHeight int64, blockTime time.Time) bool {
+func IsFinalizedTransaction(tx *rddutil.Tx, blockHeight int64, blockTime time.Time) bool {
 	msgTx := tx.MsgTx()
 
 	// Lock time of zero means the transaction is finalized.
@@ -172,7 +172,7 @@ func isBIP0030Node(node *blockNode) bool {
 //
 // At the target block generation rate for the main network, this is
 // approximately every 4 years.
-func CalcBlockSubsidy(height int64, netParams *btcnet.Params) int64 {
+func CalcBlockSubsidy(height int64, netParams *rddnet.Params) int64 {
 	if netParams.SubsidyHalvingInterval == 0 {
 		return baseSubsidy
 	}
@@ -183,7 +183,7 @@ func CalcBlockSubsidy(height int64, netParams *btcnet.Params) int64 {
 
 // CheckTransactionSanity performs some preliminary checks on a transaction to
 // ensure it is sane.  These checks are context free.
-func CheckTransactionSanity(tx *btcutil.Tx) error {
+func CheckTransactionSanity(tx *rddutil.Tx) error {
 	// A transaction must have at least one input.
 	msgTx := tx.MsgTx()
 	if len(msgTx.TxIn) == 0 {
@@ -198,9 +198,9 @@ func CheckTransactionSanity(tx *btcutil.Tx) error {
 	// A transaction must not exceed the maximum allowed block payload when
 	// serialized.
 	serializedTxSize := tx.MsgTx().SerializeSize()
-	if serializedTxSize > btcwire.MaxBlockPayload {
+	if serializedTxSize > rddwire.MaxBlockPayload {
 		str := fmt.Sprintf("serialized transaction is too big - got "+
-			"%d, max %d", serializedTxSize, btcwire.MaxBlockPayload)
+			"%d, max %d", serializedTxSize, rddwire.MaxBlockPayload)
 		return ruleError(ErrTxTooBig, str)
 	}
 
@@ -208,7 +208,7 @@ func CheckTransactionSanity(tx *btcutil.Tx) error {
 	// output must not be negative or more than the max allowed per
 	// transaction.  Also, the total of all outputs must abide by the same
 	// restrictions.  All amounts in a transaction are in a unit value known
-	// as a satoshi.  One bitcoin is a quantity of satoshi as defined by the
+	// as a satoshi.  One Reddcoin is a quantity of satoshi as defined by the
 	// SatoshiPerBitcoin constant.
 	var totalSatoshi int64
 	for _, txOut := range msgTx.TxOut {
@@ -218,10 +218,10 @@ func CheckTransactionSanity(tx *btcutil.Tx) error {
 				"value of %v", satoshi)
 			return ruleError(ErrBadTxOutValue, str)
 		}
-		if satoshi > btcutil.MaxSatoshi {
+		if satoshi > rddutil.MaxSatoshi {
 			str := fmt.Sprintf("transaction output value of %v is "+
 				"higher than max allowed value of %v", satoshi,
-				btcutil.MaxSatoshi)
+				rddutil.MaxSatoshi)
 			return ruleError(ErrBadTxOutValue, str)
 		}
 
@@ -234,17 +234,17 @@ func CheckTransactionSanity(tx *btcutil.Tx) error {
 				"outputs has negative value of %v", totalSatoshi)
 			return ruleError(ErrBadTxOutValue, str)
 		}
-		if totalSatoshi > btcutil.MaxSatoshi {
+		if totalSatoshi > rddutil.MaxSatoshi {
 			str := fmt.Sprintf("total value of all transaction "+
 				"outputs is %v which is higher than max "+
 				"allowed value of %v", totalSatoshi,
-				btcutil.MaxSatoshi)
+				rddutil.MaxSatoshi)
 			return ruleError(ErrBadTxOutValue, str)
 		}
 	}
 
 	// Check for duplicate transaction inputs.
-	existingTxOut := make(map[btcwire.OutPoint]struct{})
+	existingTxOut := make(map[rddwire.OutPoint]struct{})
 	for _, txIn := range msgTx.TxIn {
 		if _, exists := existingTxOut[txIn.PreviousOutPoint]; exists {
 			return ruleError(ErrDuplicateTxInputs, "transaction "+
@@ -286,7 +286,7 @@ func CheckTransactionSanity(tx *btcutil.Tx) error {
 // The flags modify the behavior of this function as follows:
 //  - BFNoPoWCheck: The check to ensure the block hash is less than the target
 //    difficulty is not performed.
-func checkProofOfWork(block *btcutil.Block, powLimit *big.Int, flags BehaviorFlags) error {
+func checkProofOfWork(block *rddutil.Block, powLimit *big.Int, flags BehaviorFlags) error {
 	// The target difficulty must be larger than zero.
 	target := CompactToBig(block.MsgBlock().Header.Bits)
 	if target.Sign() <= 0 {
@@ -324,29 +324,29 @@ func checkProofOfWork(block *btcutil.Block, powLimit *big.Int, flags BehaviorFla
 // CheckProofOfWork ensures the block header bits which indicate the target
 // difficulty is in min/max range and that the block hash is less than the
 // target difficulty as claimed.
-func CheckProofOfWork(block *btcutil.Block, powLimit *big.Int) error {
+func CheckProofOfWork(block *rddutil.Block, powLimit *big.Int) error {
 	return checkProofOfWork(block, powLimit, BFNone)
 }
 
 // CountSigOps returns the number of signature operations for all transaction
 // input and output scripts in the provided transaction.  This uses the
 // quicker, but imprecise, signature operation counting mechanism from
-// btcscript.
-func CountSigOps(tx *btcutil.Tx) int {
+// rddscript.
+func CountSigOps(tx *rddutil.Tx) int {
 	msgTx := tx.MsgTx()
 
 	// Accumulate the number of signature operations in all transaction
 	// inputs.
 	totalSigOps := 0
 	for _, txIn := range msgTx.TxIn {
-		numSigOps := btcscript.GetSigOpCount(txIn.SignatureScript)
+		numSigOps := rddscript.GetSigOpCount(txIn.SignatureScript)
 		totalSigOps += numSigOps
 	}
 
 	// Accumulate the number of signature operations in all transaction
 	// outputs.
 	for _, txOut := range msgTx.TxOut {
-		numSigOps := btcscript.GetSigOpCount(txOut.PkScript)
+		numSigOps := rddscript.GetSigOpCount(txOut.PkScript)
 		totalSigOps += numSigOps
 	}
 
@@ -355,9 +355,9 @@ func CountSigOps(tx *btcutil.Tx) int {
 
 // CountP2SHSigOps returns the number of signature operations for all input
 // transactions which are of the pay-to-script-hash type.  This uses the
-// precise, signature operation counting mechanism from btcscript which requires
+// precise, signature operation counting mechanism from rddscript which requires
 // access to the input transaction scripts.
-func CountP2SHSigOps(tx *btcutil.Tx, isCoinBaseTx bool, txStore TxStore) (int, error) {
+func CountP2SHSigOps(tx *rddutil.Tx, isCoinBaseTx bool, txStore TxStore) (int, error) {
 	// Coinbase transactions have no interesting inputs.
 	if isCoinBaseTx {
 		return 0, nil
@@ -392,14 +392,14 @@ func CountP2SHSigOps(tx *btcutil.Tx, isCoinBaseTx bool, txStore TxStore) (int, e
 		// We're only interested in pay-to-script-hash types, so skip
 		// this input if it's not one.
 		pkScript := originMsgTx.TxOut[originTxIndex].PkScript
-		if !btcscript.IsPayToScriptHash(pkScript) {
+		if !rddscript.IsPayToScriptHash(pkScript) {
 			continue
 		}
 
 		// Count the precise number of signature operations in the
 		// referenced public key script.
 		sigScript := txIn.SignatureScript
-		numSigOps := btcscript.GetPreciseSigOpCount(sigScript, pkScript,
+		numSigOps := rddscript.GetPreciseSigOpCount(sigScript, pkScript,
 			true)
 
 		// We could potentially overflow the accumulator so check for
@@ -423,7 +423,7 @@ func CountP2SHSigOps(tx *btcutil.Tx, isCoinBaseTx bool, txStore TxStore) (int, e
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkProofOfWork.
-func checkBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource MedianTimeSource, flags BehaviorFlags) error {
+func checkBlockSanity(block *rddutil.Block, powLimit *big.Int, timeSource MedianTimeSource, flags BehaviorFlags) error {
 	// A block must have at least one transaction.
 	msgBlock := block.MsgBlock()
 	numTx := len(msgBlock.Transactions)
@@ -433,18 +433,18 @@ func checkBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource Median
 	}
 
 	// A block must not have more transactions than the max block payload.
-	if numTx > btcwire.MaxBlockPayload {
+	if numTx > rddwire.MaxBlockPayload {
 		str := fmt.Sprintf("block contains too many transactions - "+
-			"got %d, max %d", numTx, btcwire.MaxBlockPayload)
+			"got %d, max %d", numTx, rddwire.MaxBlockPayload)
 		return ruleError(ErrTooManyTransactions, str)
 	}
 
 	// A block must not exceed the maximum allowed block payload when
 	// serialized.
 	serializedSize := msgBlock.SerializeSize()
-	if serializedSize > btcwire.MaxBlockPayload {
+	if serializedSize > rddwire.MaxBlockPayload {
 		str := fmt.Sprintf("serialized block is too big - got %d, "+
-			"max %d", serializedSize, btcwire.MaxBlockPayload)
+			"max %d", serializedSize, rddwire.MaxBlockPayload)
 		return ruleError(ErrBlockTooBig, str)
 	}
 
@@ -520,7 +520,7 @@ func checkBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource Median
 	// Check for duplicate transactions.  This check will be fairly quick
 	// since the transaction hashes are already cached due to building the
 	// merkle tree above.
-	existingTxHashes := make(map[btcwire.ShaHash]struct{})
+	existingTxHashes := make(map[rddwire.ShaHash]struct{})
 	for _, tx := range transactions {
 		hash := tx.Sha()
 		if _, exists := existingTxHashes[*hash]; exists {
@@ -552,13 +552,13 @@ func checkBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource Median
 
 // CheckBlockSanity performs some preliminary checks on a block to ensure it is
 // sane before continuing with block processing.  These checks are context free.
-func CheckBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource MedianTimeSource) error {
+func CheckBlockSanity(block *rddutil.Block, powLimit *big.Int, timeSource MedianTimeSource) error {
 	return checkBlockSanity(block, powLimit, timeSource, BFNone)
 }
 
 // checkSerializedHeight checks if the signature script in the passed
 // transaction starts with the serialized block height of wantHeight.
-func checkSerializedHeight(coinbaseTx *btcutil.Tx, wantHeight int64) error {
+func checkSerializedHeight(coinbaseTx *rddutil.Tx, wantHeight int64) error {
 	sigScript := coinbaseTx.MsgTx().TxIn[0].SignatureScript
 	if len(sigScript) < 1 {
 		str := "the coinbase signature script for blocks of " +
@@ -610,10 +610,10 @@ func isTransactionSpent(txD *TxData) bool {
 //
 // For more details, see https://en.bitcoin.it/wiki/BIP_0030 and
 // http://r6.ca/blog/20120206T005236Z.html.
-func (b *BlockChain) checkBIP0030(node *blockNode, block *btcutil.Block) error {
+func (b *BlockChain) checkBIP0030(node *blockNode, block *rddutil.Block) error {
 	// Attempt to fetch duplicate transactions for all of the transactions
 	// in this block from the point of view of the parent node.
-	fetchSet := make(map[btcwire.ShaHash]struct{})
+	fetchSet := make(map[rddwire.ShaHash]struct{})
 	for _, tx := range block.Transactions() {
 		fetchSet[*tx.Sha()] = struct{}{}
 	}
@@ -627,7 +627,7 @@ func (b *BlockChain) checkBIP0030(node *blockNode, block *btcutil.Block) error {
 		switch txD.Err {
 		// A duplicate transaction was not found.  This is the most
 		// common case.
-		case btcdb.ErrTxShaMissing:
+		case rdddb.ErrTxShaMissing:
 			continue
 
 		// A duplicate transaction was found.  This is only allowed if
@@ -658,7 +658,7 @@ func (b *BlockChain) checkBIP0030(node *blockNode, block *btcutil.Block) error {
 // amount, and verifying the signatures to prove the spender was the owner of
 // the bitcoins and therefore allowed to spend them.  As it checks the inputs,
 // it also calculates the total fees for the transaction and returns that value.
-func CheckTransactionInputs(tx *btcutil.Tx, txHeight int64, txStore TxStore) (int64, error) {
+func CheckTransactionInputs(tx *rddutil.Tx, txHeight int64, txStore TxStore) (int64, error) {
 	// Coinbase transactions have no inputs.
 	if IsCoinBase(tx) {
 		return 0, nil
@@ -710,7 +710,7 @@ func CheckTransactionInputs(tx *btcutil.Tx, txHeight int64, txStore TxStore) (in
 		// output values of the input transactions must not be negative
 		// or more than the max allowed per transaction.  All amounts in
 		// a transaction are in a unit value known as a satoshi.  One
-		// bitcoin is a quantity of satoshi as defined by the
+		// Reddcoin is a quantity of satoshi as defined by the
 		// SatoshiPerBitcoin constant.
 		originTxSatoshi := originTx.Tx.MsgTx().TxOut[originTxIndex].Value
 		if originTxSatoshi < 0 {
@@ -718,10 +718,10 @@ func CheckTransactionInputs(tx *btcutil.Tx, txHeight int64, txStore TxStore) (in
 				"value of %v", originTxSatoshi)
 			return 0, ruleError(ErrBadTxOutValue, str)
 		}
-		if originTxSatoshi > btcutil.MaxSatoshi {
+		if originTxSatoshi > rddutil.MaxSatoshi {
 			str := fmt.Sprintf("transaction output value of %v is "+
 				"higher than max allowed value of %v",
-				originTxSatoshi, btcutil.MaxSatoshi)
+				originTxSatoshi, rddutil.MaxSatoshi)
 			return 0, ruleError(ErrBadTxOutValue, str)
 		}
 
@@ -731,11 +731,11 @@ func CheckTransactionInputs(tx *btcutil.Tx, txHeight int64, txStore TxStore) (in
 		lastSatoshiIn := totalSatoshiIn
 		totalSatoshiIn += originTxSatoshi
 		if totalSatoshiIn < lastSatoshiIn ||
-			totalSatoshiIn > btcutil.MaxSatoshi {
+			totalSatoshiIn > rddutil.MaxSatoshi {
 			str := fmt.Sprintf("total value of all transaction "+
 				"inputs is %v which is higher than max "+
 				"allowed value of %v", totalSatoshiIn,
-				btcutil.MaxSatoshi)
+				rddutil.MaxSatoshi)
 			return 0, ruleError(ErrBadTxOutValue, str)
 		}
 
@@ -759,7 +759,7 @@ func CheckTransactionInputs(tx *btcutil.Tx, txHeight int64, txStore TxStore) (in
 		return 0, ruleError(ErrSpendTooHigh, str)
 	}
 
-	// NOTE: bitcoind checks if the transaction fees are < 0 here, but that
+	// NOTE: reddcoind checks if the transaction fees are < 0 here, but that
 	// is an impossible condition because of the check above that ensures
 	// the inputs are >= the outputs.
 	txFeeInSatoshi := totalSatoshiIn - totalSatoshiOut
@@ -778,7 +778,7 @@ func CheckTransactionInputs(tx *btcutil.Tx, txHeight int64, txStore TxStore) (in
 //
 // See the comments for CheckConnectBlock for some examples of the type of
 // checks performed by this function.
-func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block) error {
+func (b *BlockChain) checkConnectBlock(node *blockNode, block *rddutil.Block) error {
 	// If the side chain blocks end up in the database, a call to
 	// CheckBlockSanity should be done here in case a previous version
 	// allowed a block that is no longer valid.  However, since the
@@ -818,10 +818,10 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block) er
 
 	// BIP0016 describes a pay-to-script-hash type that is considered a
 	// "standard" type.  The rules for this BIP only apply to transactions
-	// after the timestamp defined by btcscript.Bip16Activation.  See
+	// after the timestamp defined by rddscript.Bip16Activation.  See
 	// https://en.bitcoin.it/wiki/BIP_0016 for more details.
 	enforceBIP0016 := false
-	if node.timestamp.After(btcscript.Bip16Activation) {
+	if node.timestamp.After(rddscript.Bip16Activation) {
 		enforceBIP0016 = true
 	}
 
@@ -939,7 +939,7 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block) er
 // fail transaction script validation.
 //
 // This function is NOT safe for concurrent access.
-func (b *BlockChain) CheckConnectBlock(block *btcutil.Block) error {
+func (b *BlockChain) CheckConnectBlock(block *rddutil.Block) error {
 	prevNode := b.bestChain
 	blockSha, _ := block.Sha()
 	newNode := newBlockNode(&block.MsgBlock().Header, blockSha, block.Height())

@@ -2,15 +2,15 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcchain_test
+package rddchain_test
 
 import (
 	"fmt"
-	"github.com/conformal/btcchain"
-	"github.com/conformal/btcdb"
-	_ "github.com/conformal/btcdb/memdb"
-	"github.com/conformal/btcnet"
-	"github.com/conformal/btcutil"
+	"github.com/reddcoin-project/rddchain"
+	"github.com/reddcoin-project/rdddb"
+	_ "github.com/reddcoin-project/rdddb/memdb"
+	"github.com/reddcoin-project/rddnet"
+	"github.com/reddcoin-project/rddutil"
 	"math/big"
 )
 
@@ -24,7 +24,7 @@ func ExampleBlockChain_ProcessBlock() {
 	// this would be opening an existing database and would not use memdb
 	// which is a memory-only database backend, but we create a new db
 	// here so this is a complete working example.
-	db, err := btcdb.CreateDB("memdb")
+	db, err := rdddb.CreateDB("memdb")
 	if err != nil {
 		fmt.Printf("Failed to create database: %v\n", err)
 		return
@@ -34,7 +34,7 @@ func ExampleBlockChain_ProcessBlock() {
 	// Insert the main network genesis block.  This is part of the initial
 	// database setup.  Like above, this typically would not be needed when
 	// opening an existing database.
-	genesisBlock := btcutil.NewBlock(btcnet.MainNetParams.GenesisBlock)
+	genesisBlock := rddutil.NewBlock(rddnet.MainNetParams.GenesisBlock)
 	_, err = db.InsertBlock(genesisBlock)
 	if err != nil {
 		fmt.Printf("Failed to insert genesis block: %v\n", err)
@@ -42,19 +42,19 @@ func ExampleBlockChain_ProcessBlock() {
 	}
 
 	// Create a new BlockChain instance using the underlying database for
-	// the main bitcoin network and ignore notifications.
-	chain := btcchain.New(db, &btcnet.MainNetParams, nil)
+	// the main Reddcoin network and ignore notifications.
+	chain := rddchain.New(db, &rddnet.MainNetParams, nil)
 
 	// Create a new median time source that is required by the upcoming
 	// call to ProcessBlock.  Ordinarily this would also add time values
 	// obtained from other peers on the network so the local time is
 	// adjusted to be in agreement with other peers.
-	timeSource := btcchain.NewMedianTime()
+	timeSource := rddchain.NewMedianTime()
 
 	// Process a block.  For this example, we are going to intentionally
 	// cause an error by trying to process the genesis block which already
 	// exists.
-	isOrphan, err := chain.ProcessBlock(genesisBlock, timeSource, btcchain.BFNone)
+	isOrphan, err := chain.ProcessBlock(genesisBlock, timeSource, rddchain.BFNone)
 	if err != nil {
 		fmt.Printf("Failed to process block: %v\n", err)
 		return
@@ -71,7 +71,7 @@ func ExampleBlockChain_ProcessBlock() {
 func ExampleCompactToBig() {
 	// Convert the bits from block 300000 in the main block chain.
 	bits := uint32(419465580)
-	targetDifficulty := btcchain.CompactToBig(bits)
+	targetDifficulty := rddchain.CompactToBig(bits)
 
 	// Display it in hex.
 	fmt.Printf("%064x\n", targetDifficulty.Bytes())
@@ -91,7 +91,7 @@ func ExampleBigToCompact() {
 		fmt.Println("invalid target difficulty")
 		return
 	}
-	bits := btcchain.BigToCompact(targetDifficulty)
+	bits := rddchain.BigToCompact(targetDifficulty)
 
 	fmt.Println(bits)
 

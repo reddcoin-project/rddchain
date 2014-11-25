@@ -2,14 +2,14 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcchain
+package rddchain
 
 import (
 	"fmt"
 	"math/big"
 	"time"
 
-	"github.com/conformal/btcwire"
+	"github.com/reddcoin-project/rddwire"
 )
 
 const (
@@ -53,9 +53,9 @@ var (
 	oneLsh256 = new(big.Int).Lsh(bigOne, 256)
 )
 
-// ShaHashToBig converts a btcwire.ShaHash into a big.Int that can be used to
+// ShaHashToBig converts a rddwire.ShaHash into a big.Int that can be used to
 // perform math comparisons.
-func ShaHashToBig(hash *btcwire.ShaHash) *big.Int {
+func ShaHashToBig(hash *rddwire.ShaHash) *big.Int {
 	// A ShaHash is in little-endian, but the big package wants the bytes
 	// in big-endian.  Reverse them.  ShaHash.Bytes makes a copy, so it
 	// is safe to modify the returned buffer.
@@ -88,9 +88,9 @@ func ShaHashToBig(hash *btcwire.ShaHash) *big.Int {
 // The formula to calculate N is:
 // 	N = (-1^sign) * mantissa * 256^(exponent-3)
 //
-// This compact form is only used in bitcoin to encode unsigned 256-bit numbers
+// This compact form is only used in Reddcoin to encode unsigned 256-bit numbers
 // which represent difficulty targets, thus there really is not a need for a
-// sign bit, but it is implemented here to stay consistent with bitcoind.
+// sign bit, but it is implemented here to stay consistent with reddcoind.
 func CompactToBig(compact uint32) *big.Int {
 	// Extract the mantissa, sign bit, and exponent.
 	mantissa := compact & 0x007fffff

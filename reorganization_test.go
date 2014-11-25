@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcchain_test
+package rddchain_test
 
 import (
 	"compress/bzip2"
@@ -13,9 +13,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/conformal/btcchain"
-	"github.com/conformal/btcutil"
-	"github.com/conformal/btcwire"
+	"github.com/reddcoin-project/rddchain"
+	"github.com/reddcoin-project/rddutil"
+	"github.com/reddcoin-project/rddwire"
 )
 
 // TestReorganization loads a set of test blocks which force a chain
@@ -32,7 +32,7 @@ func TestReorganization(t *testing.T) {
 		"blk_3A.dat.bz2",
 	}
 
-	var blocks []*btcutil.Block
+	var blocks []*rddutil.Block
 	for _, file := range testFiles {
 		blockTmp, err := loadBlocks(file)
 		if err != nil {
@@ -56,12 +56,12 @@ func TestReorganization(t *testing.T) {
 	// Since we're not dealing with the real block chain, disable
 	// checkpoints and set the coinbase maturity to 1.
 	chain.DisableCheckpoints(true)
-	btcchain.TstSetCoinbaseMaturity(1)
+	rddchain.TstSetCoinbaseMaturity(1)
 
-	timeSource := btcchain.NewMedianTime()
+	timeSource := rddchain.NewMedianTime()
 	expectedOrphans := map[int]struct{}{5: struct{}{}, 6: struct{}{}}
 	for i := 1; i < len(blocks); i++ {
-		isOrphan, err := chain.ProcessBlock(blocks[i], timeSource, btcchain.BFNone)
+		isOrphan, err := chain.ProcessBlock(blocks[i], timeSource, rddchain.BFNone)
 		if err != nil {
 			t.Errorf("ProcessBlock fail on block %v: %v\n", i, err)
 			return
@@ -75,13 +75,13 @@ func TestReorganization(t *testing.T) {
 	return
 }
 
-// loadBlocks reads files containing bitcoin block data (gzipped but otherwise
-// in the format bitcoind writes) from disk and returns them as an array of
-// btcutil.Block.  This is largely borrowed from the test code in btcdb.
-func loadBlocks(filename string) (blocks []*btcutil.Block, err error) {
+// loadBlocks reads files containing Reddcoin block data (gzipped but otherwise
+// in the format reddcoind writes) from disk and returns them as an array of
+// rddutil.Block.  This is largely borrowed from the test code in rdddb.
+func loadBlocks(filename string) (blocks []*rddutil.Block, err error) {
 	filename = filepath.Join("testdata/", filename)
 
-	var network = btcwire.MainNet
+	var network = rddwire.MainNet
 	var dr io.Reader
 	var fi io.ReadCloser
 
@@ -97,7 +97,7 @@ func loadBlocks(filename string) (blocks []*btcutil.Block, err error) {
 	}
 	defer fi.Close()
 
-	var block *btcutil.Block
+	var block *rddutil.Block
 
 	err = nil
 	for height := int64(1); err == nil; height++ {
@@ -123,7 +123,7 @@ func loadBlocks(filename string) (blocks []*btcutil.Block, err error) {
 		// read block
 		dr.Read(rbytes)
 
-		block, err = btcutil.NewBlockFromBytes(rbytes)
+		block, err = rddutil.NewBlockFromBytes(rbytes)
 		if err != nil {
 			return
 		}

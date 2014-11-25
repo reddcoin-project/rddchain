@@ -2,12 +2,12 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcchain
+package rddchain
 
 import (
 	"fmt"
 
-	"github.com/conformal/btcutil"
+	"github.com/reddcoin-project/rddutil"
 )
 
 // maybeAcceptBlock potentially accepts a block into the memory block chain.
@@ -19,7 +19,7 @@ import (
 //  - BFFastAdd: The somewhat expensive BIP0034 validation is not performed.
 //  - BFDryRun: The memory chain index will not be pruned and no accept
 //    notification will be sent since the block is not being accepted.
-func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags) error {
+func (b *BlockChain) maybeAcceptBlock(block *rddutil.Block, flags BehaviorFlags) error {
 	fastAdd := flags&BFFastAdd == BFFastAdd
 	dryRun := flags&BFDryRun == BFDryRun
 

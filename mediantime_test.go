@@ -2,14 +2,14 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcchain_test
+package rddchain_test
 
 import (
 	"strconv"
 	"testing"
 	"time"
 
-	"github.com/conformal/btcchain"
+	"github.com/reddcoin-project/rddchain"
 )
 
 // TestMedianTime tests the medianTime implementation.
@@ -55,11 +55,11 @@ func TestMedianTime(t *testing.T) {
 	}
 
 	// Modify the max number of allowed median time entries for these tests.
-	btcchain.TstSetMaxMedianTimeEntries(10)
-	defer btcchain.TstSetMaxMedianTimeEntries(200)
+	rddchain.TstSetMaxMedianTimeEntries(10)
+	defer rddchain.TstSetMaxMedianTimeEntries(200)
 
 	for i, test := range tests {
-		filter := btcchain.NewMedianTime()
+		filter := rddchain.NewMedianTime()
 		for j, offset := range test.in {
 			id := strconv.Itoa(j)
 			now := time.Unix(time.Now().Unix(), 0)

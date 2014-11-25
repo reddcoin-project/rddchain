@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcchain
+package rddchain
 
 import (
 	"container/list"
@@ -13,10 +13,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/conformal/btcdb"
-	"github.com/conformal/btcnet"
-	"github.com/conformal/btcutil"
-	"github.com/conformal/btcwire"
+	"github.com/reddcoin-project/rdddb"
+	"github.com/reddcoin-project/rddnet"
+	"github.com/reddcoin-project/rddutil"
+	"github.com/reddcoin-project/rddwire"
 )
 
 const (
@@ -49,13 +49,13 @@ type blockNode struct {
 	children []*blockNode
 
 	// hash is the double sha 256 of the block.
-	hash *btcwire.ShaHash
+	hash *rddwire.ShaHash
 
 	// parentHash is the double sha 256 of the parent block.  This is kept
 	// here over simply relying on parent.hash directly since block nodes
 	// are sparse and the parent node might not be in memory when its hash
 	// is needed.
-	parentHash *btcwire.ShaHash
+	parentHash *rddwire.ShaHash
 
 	// height is the position in the block chain.
 	height int64
@@ -79,7 +79,7 @@ type blockNode struct {
 // completely disconnected from the chain and the workSum value is just the work
 // for the passed block.  The work sum is updated accordingly when the node is
 // inserted into a chain.
-func newBlockNode(blockHeader *btcwire.BlockHeader, blockSha *btcwire.ShaHash, height int64) *blockNode {
+func newBlockNode(blockHeader *rddwire.BlockHeader, blockSha *rddwire.ShaHash, height int64) *blockNode {
 	// Make a copy of the hash so the node doesn't keep a reference to part
 	// of the full block/block header preventing it from being garbage
 	// collected.
@@ -100,7 +100,7 @@ func newBlockNode(blockHeader *btcwire.BlockHeader, blockSha *btcwire.ShaHash, h
 // is a normal block plus an expiration time to prevent caching the orphan
 // forever.
 type orphanBlock struct {
-	block      *btcutil.Block
+	block      *rddutil.Block
 	expiration time.Time
 }
 
@@ -137,28 +137,28 @@ func removeChildNode(children []*blockNode, node *blockNode) []*blockNode {
 	return children
 }
 
-// BlockChain provides functions for working with the bitcoin block chain.
+// BlockChain provides functions for working with the Reddcoin block chain.
 // It includes functionality such as rejecting duplicate blocks, ensuring blocks
 // follow all rules, orphan handling, checkpoint handling, and best chain
 // selection with reorganization.
 type BlockChain struct {
-	db                  btcdb.Db
-	netParams           *btcnet.Params
-	checkpointsByHeight map[int64]*btcnet.Checkpoint
+	db                  rdddb.Db
+	netParams           *rddnet.Params
+	checkpointsByHeight map[int64]*rddnet.Checkpoint
 	notifications       NotificationCallback
 	root                *blockNode
 	bestChain           *blockNode
-	index               map[btcwire.ShaHash]*blockNode
-	depNodes            map[btcwire.ShaHash][]*blockNode
-	orphans             map[btcwire.ShaHash]*orphanBlock
-	prevOrphans         map[btcwire.ShaHash][]*orphanBlock
+	index               map[rddwire.ShaHash]*blockNode
+	depNodes            map[rddwire.ShaHash][]*blockNode
+	orphans             map[rddwire.ShaHash]*orphanBlock
+	prevOrphans         map[rddwire.ShaHash][]*orphanBlock
 	oldestOrphan        *orphanBlock
 	orphanLock          sync.RWMutex
-	blockCache          map[btcwire.ShaHash]*btcutil.Block
+	blockCache          map[rddwire.ShaHash]*rddutil.Block
 	noVerify            bool
 	noCheckpoints       bool
-	nextCheckpoint      *btcnet.Checkpoint
-	checkpointBlock     *btcutil.Block
+	nextCheckpoint      *rddnet.Checkpoint
+	checkpointBlock     *rddutil.Block
 }
 
 // DisableVerify provides a mechanism to disable transaction script validation
@@ -175,7 +175,7 @@ func (b *BlockChain) DisableVerify(disable bool) {
 // be like part of the main chain, on a side chain, or in the orphan pool.
 //
 // This function is NOT safe for concurrent access.
-func (b *BlockChain) HaveBlock(hash *btcwire.ShaHash) (bool, error) {
+func (b *BlockChain) HaveBlock(hash *rddwire.ShaHash) (bool, error) {
 	exists, err := b.blockExists(hash)
 	if err != nil {
 		return false, err
@@ -193,7 +193,7 @@ func (b *BlockChain) HaveBlock(hash *btcwire.ShaHash) (bool, error) {
 // duplicate orphans and react accordingly.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) IsKnownOrphan(hash *btcwire.ShaHash) bool {
+func (b *BlockChain) IsKnownOrphan(hash *rddwire.ShaHash) bool {
 	// Protect concurrent access.  Using a read lock only so multiple
 	// readers can query without blocking each other.
 	b.orphanLock.RLock()
@@ -210,7 +210,7 @@ func (b *BlockChain) IsKnownOrphan(hash *btcwire.ShaHash) bool {
 // map of orphan blocks.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) GetOrphanRoot(hash *btcwire.ShaHash) *btcwire.ShaHash {
+func (b *BlockChain) GetOrphanRoot(hash *rddwire.ShaHash) *rddwire.ShaHash {
 	// Protect concurrent access.  Using a read lock only so multiple
 	// readers can query without blocking each other.
 	b.orphanLock.RLock()
@@ -274,7 +274,7 @@ func (b *BlockChain) removeOrphanBlock(orphan *orphanBlock) {
 // It also imposes a maximum limit on the number of outstanding orphan
 // blocks and will remove the oldest received orphan block if the limit is
 // exceeded.
-func (b *BlockChain) addOrphanBlock(block *btcutil.Block) {
+func (b *BlockChain) addOrphanBlock(block *rddutil.Block) {
 	// Remove expired orphan blocks.
 	for _, oBlock := range b.orphans {
 		if time.Now().After(oBlock.expiration) {
@@ -355,7 +355,7 @@ func (b *BlockChain) GenerateInitialIndex() error {
 	// Loop forwards through each block loading the node into the index for
 	// the block.
 	//
-	// Due to a bug in the SQLite btcdb driver, the FetchBlockBySha call is
+	// Due to a bug in the SQLite rdddb driver, the FetchBlockBySha call is
 	// limited to a maximum number of hashes per invocation.  Since SQLite
 	// is going to be nuked eventually, the bug isn't being fixed in the
 	// driver.  In the mean time, work around the issue by calling
@@ -399,7 +399,7 @@ func (b *BlockChain) GenerateInitialIndex() error {
 // creates a block node from it, and updates the memory block chain accordingly.
 // It is used mainly to dynamically load previous blocks from database as they
 // are needed to avoid needing to put the entire block chain in memory.
-func (b *BlockChain) loadBlockNode(hash *btcwire.ShaHash) (*blockNode, error) {
+func (b *BlockChain) loadBlockNode(hash *rddwire.ShaHash) (*blockNode, error) {
 	// Load the block header and height from the db.
 	blockHeader, err := b.db.FetchBlockHeaderBySha(hash)
 	if err != nil {
@@ -472,7 +472,7 @@ func (b *BlockChain) loadBlockNode(hash *btcwire.ShaHash) (*blockNode, error) {
 // block chain, it simply returns it.  Otherwise, it loads the previous block
 // from the block database, creates a new block node from it, and returns it.
 // The returned node will be nil if the genesis block is passed.
-func (b *BlockChain) getPrevNodeFromBlock(block *btcutil.Block) (*blockNode, error) {
+func (b *BlockChain) getPrevNodeFromBlock(block *rddutil.Block) (*blockNode, error) {
 	// Genesis block.
 	prevHash := &block.MsgBlock().Header.PrevBlock
 	if prevHash.IsEqual(zeroHash) {
@@ -671,7 +671,7 @@ func (b *BlockChain) calcPastMedianTime(startNode *blockNode) (time.Time, error)
 	timestamps = timestamps[:numNodes]
 	sort.Sort(timeSorter(timestamps))
 
-	// NOTE: bitcoind incorrectly calculates the median for even numbers of
+	// NOTE: reddcoind incorrectly calculates the median for even numbers of
 	// blocks.  A true median averages the middle two elements for a set
 	// with an even number of elements in it.   Since the constant for the
 	// previous number of blocks to be used is odd, this is only an issue
@@ -680,7 +680,7 @@ func (b *BlockChain) calcPastMedianTime(startNode *blockNode) (time.Time, error)
 	// of the first blocks since after the first few blocks, there will
 	// always be an odd number of blocks in the set per the constant.
 	//
-	// This code follows suit to ensure the same rules are used as bitcoind
+	// This code follows suit to ensure the same rules are used as reddcoind
 	// however, be aware that should the medianTimeBlocks constant ever be
 	// changed to an even number, this code will be wrong.
 	medianTimestamp := timestamps[numNodes/2]
@@ -744,7 +744,7 @@ func (b *BlockChain) getReorganizeNodes(node *blockNode) (*list.List, *list.List
 
 // connectBlock handles connecting the passed node/block to the end of the main
 // (best) chain.
-func (b *BlockChain) connectBlock(node *blockNode, block *btcutil.Block) error {
+func (b *BlockChain) connectBlock(node *blockNode, block *rddutil.Block) error {
 	// Make sure it's extending the end of the best chain.
 	prevHash := &block.MsgBlock().Header.PrevBlock
 	if b.bestChain != nil && !prevHash.IsEqual(b.bestChain.hash) {
@@ -777,7 +777,7 @@ func (b *BlockChain) connectBlock(node *blockNode, block *btcutil.Block) error {
 
 // disconnectBlock handles disconnecting the passed node/block from the end of
 // the main (best) chain.
-func (b *BlockChain) disconnectBlock(node *blockNode, block *btcutil.Block) error {
+func (b *BlockChain) disconnectBlock(node *blockNode, block *rddutil.Block) error {
 	// Make sure the node being disconnected is the end of the best chain.
 	if b.bestChain == nil || !node.hash.IsEqual(b.bestChain.hash) {
 		return fmt.Errorf("disconnectBlock must be called with the " +
@@ -834,7 +834,7 @@ func (b *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List, flags 
 	// to the main chain can be connected without violating any rules and
 	// without actually connecting the block.
 	//
-	// NOTE: bitcoind does these checks directly when it connects a block.
+	// NOTE: reddcoind does these checks directly when it connects a block.
 	// The downside to that approach is that if any of these checks fail
 	// after disconnecting some blocks or attaching others, all of the
 	// operations have to be rolled back to get the chain back into the
@@ -910,7 +910,7 @@ func (b *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List, flags 
 //  - BFDryRun: Prevents the block from being connected and avoids modifying the
 //    state of the memory chain index.  Also, any log messages related to
 //    modifying the state are avoided.
-func (b *BlockChain) connectBestChain(node *blockNode, block *btcutil.Block, flags BehaviorFlags) error {
+func (b *BlockChain) connectBestChain(node *blockNode, block *rddutil.Block, flags BehaviorFlags) error {
 	fastAdd := flags&BFFastAdd == BFFastAdd
 	dryRun := flags&BFDryRun == BFDryRun
 
@@ -1063,17 +1063,17 @@ func (b *BlockChain) IsCurrent(timeSource MedianTimeSource) bool {
 	return true
 }
 
-// New returns a BlockChain instance for the passed bitcoin network using the
+// New returns a BlockChain instance for the passed Reddcoin network using the
 // provided backing database.  It accepts a callback on which notifications
 // will be sent when various events take place.  See the documentation for
 // Notification and NotificationType for details on the types and contents of
 // notifications.  The provided callback can be nil if the caller is not
 // interested in receiving notifications.
-func New(db btcdb.Db, params *btcnet.Params, c NotificationCallback) *BlockChain {
+func New(db rdddb.Db, params *rddnet.Params, c NotificationCallback) *BlockChain {
 	// Generate a checkpoint by height map from the provided checkpoints.
-	var checkpointsByHeight map[int64]*btcnet.Checkpoint
+	var checkpointsByHeight map[int64]*rddnet.Checkpoint
 	if len(params.Checkpoints) > 0 {
-		checkpointsByHeight = make(map[int64]*btcnet.Checkpoint)
+		checkpointsByHeight = make(map[int64]*rddnet.Checkpoint)
 		for i := range params.Checkpoints {
 			checkpoint := &params.Checkpoints[i]
 			checkpointsByHeight[checkpoint.Height] = checkpoint
@@ -1087,11 +1087,11 @@ func New(db btcdb.Db, params *btcnet.Params, c NotificationCallback) *BlockChain
 		notifications:       c,
 		root:                nil,
 		bestChain:           nil,
-		index:               make(map[btcwire.ShaHash]*blockNode),
-		depNodes:            make(map[btcwire.ShaHash][]*blockNode),
-		orphans:             make(map[btcwire.ShaHash]*orphanBlock),
-		prevOrphans:         make(map[btcwire.ShaHash][]*orphanBlock),
-		blockCache:          make(map[btcwire.ShaHash]*btcutil.Block),
+		index:               make(map[rddwire.ShaHash]*blockNode),
+		depNodes:            make(map[rddwire.ShaHash][]*blockNode),
+		orphans:             make(map[rddwire.ShaHash]*orphanBlock),
+		prevOrphans:         make(map[rddwire.ShaHash][]*orphanBlock),
+		blockCache:          make(map[rddwire.ShaHash]*rddutil.Block),
 	}
 	return &b
 }

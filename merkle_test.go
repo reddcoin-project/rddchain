@@ -2,19 +2,19 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcchain_test
+package rddchain_test
 
 import (
 	"testing"
 
-	"github.com/conformal/btcchain"
-	"github.com/conformal/btcutil"
+	"github.com/reddcoin-project/rddchain"
+	"github.com/reddcoin-project/rddutil"
 )
 
 // TestMerkle tests the BuildMerkleTreeStore API.
 func TestMerkle(t *testing.T) {
-	block := btcutil.NewBlock(&Block100000)
-	merkles := btcchain.BuildMerkleTreeStore(block.Transactions())
+	block := rddutil.NewBlock(&Block100000)
+	merkles := rddchain.BuildMerkleTreeStore(block.Transactions())
 	calculatedMerkleRoot := merkles[len(merkles)-1]
 	wantMerkle := &Block100000.Header.MerkleRoot
 	if !wantMerkle.IsEqual(calculatedMerkleRoot) {

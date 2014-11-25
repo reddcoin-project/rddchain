@@ -2,13 +2,13 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcchain
+package rddchain
 
 import (
 	"fmt"
 
-	"github.com/conformal/btcutil"
-	"github.com/conformal/btcwire"
+	"github.com/reddcoin-project/rddutil"
+	"github.com/reddcoin-project/rddwire"
 )
 
 // BehaviorFlags is a bitmask defining tweaks to the normal behavior when
@@ -38,7 +38,7 @@ const (
 
 // blockExists determines whether a block with the given hash exists either in
 // the main chain or any side chains.
-func (b *BlockChain) blockExists(hash *btcwire.ShaHash) (bool, error) {
+func (b *BlockChain) blockExists(hash *rddwire.ShaHash) (bool, error) {
 	// Check memory chain first (could be main chain or side chain blocks).
 	if _, ok := b.index[*hash]; ok {
 		return true, nil
@@ -55,11 +55,11 @@ func (b *BlockChain) blockExists(hash *btcwire.ShaHash) (bool, error) {
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to maybeAcceptBlock.
-func (b *BlockChain) processOrphans(hash *btcwire.ShaHash, flags BehaviorFlags) error {
+func (b *BlockChain) processOrphans(hash *rddwire.ShaHash, flags BehaviorFlags) error {
 	// Start with processing at least the passed hash.  Leave a little room
 	// for additional orphan blocks that need to be processed without
 	// needing to grow the array in the common case.
-	processHashes := make([]*btcwire.ShaHash, 0, 10)
+	processHashes := make([]*rddwire.ShaHash, 0, 10)
 	processHashes = append(processHashes, hash)
 	for len(processHashes) > 0 {
 		// Pop the first hash to process from the slice.
@@ -114,7 +114,7 @@ func (b *BlockChain) processOrphans(hash *btcwire.ShaHash, flags BehaviorFlags) 
 // It returns a bool which indicates whether or not the block is an orphan and
 // any errors that occurred during processing.  The returned bool is only valid
 // when the error is nil.
-func (b *BlockChain) ProcessBlock(block *btcutil.Block, timeSource MedianTimeSource, flags BehaviorFlags) (bool, error) {
+func (b *BlockChain) ProcessBlock(block *rddutil.Block, timeSource MedianTimeSource, flags BehaviorFlags) (bool, error) {
 	fastAdd := flags&BFFastAdd == BFFastAdd
 	dryRun := flags&BFDryRun == BFDryRun
 

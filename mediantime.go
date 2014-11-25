@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcchain
+package rddchain
 
 import (
 	"math"
@@ -183,7 +183,7 @@ func (m *medianTime) AddTimeSample(sourceID string, timeVal time.Time) {
 			// Warn if none of the time samples are close.
 			if !remoteHasCloseTime {
 				log.Warnf("Please check your date and time " +
-					"are correct!  btcd will not work " +
+					"are correct!  rddd will not work " +
 					"properly with an invalid time")
 			}
 		}

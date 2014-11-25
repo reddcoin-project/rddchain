@@ -2,21 +2,21 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcchain
+package rddchain
 
 import (
 	"fmt"
 
-	"github.com/conformal/btcdb"
-	"github.com/conformal/btcutil"
-	"github.com/conformal/btcwire"
+	"github.com/reddcoin-project/rdddb"
+	"github.com/reddcoin-project/rddutil"
+	"github.com/reddcoin-project/rddwire"
 )
 
 // TxData contains contextual information about transactions such as which block
 // they were found in and whether or not the outputs are spent.
 type TxData struct {
-	Tx          *btcutil.Tx
-	Hash        *btcwire.ShaHash
+	Tx          *rddutil.Tx
+	Hash        *rddwire.ShaHash
 	BlockHeight int64
 	Spent       []bool
 	Err         error
@@ -26,12 +26,12 @@ type TxData struct {
 // such as script validation and double spend prevention.  This also allows the
 // transaction data to be treated as a view since it can contain the information
 // from the point-of-view of different points in the chain.
-type TxStore map[btcwire.ShaHash]*TxData
+type TxStore map[rddwire.ShaHash]*TxData
 
 // connectTransactions updates the passed map by applying transaction and
 // spend information for all the transactions in the passed block.  Only
 // transactions in the passed map are updated.
-func connectTransactions(txStore TxStore, block *btcutil.Block) error {
+func connectTransactions(txStore TxStore, block *rddutil.Block) error {
 	// Loop through all of the transactions in the block to see if any of
 	// them are ones we need to update and spend based on the results map.
 	for _, tx := range block.Transactions() {
@@ -64,7 +64,7 @@ func connectTransactions(txStore TxStore, block *btcutil.Block) error {
 // disconnectTransactions updates the passed map by undoing transaction and
 // spend information for all transactions in the passed block.  Only
 // transactions in the passed map are updated.
-func disconnectTransactions(txStore TxStore, block *btcutil.Block) error {
+func disconnectTransactions(txStore TxStore, block *rddutil.Block) error {
 	// Loop through all of the transactions in the block to see if any of
 	// them are ones that need to be undone based on the transaction store.
 	for _, tx := range block.Transactions() {
@@ -77,7 +77,7 @@ func disconnectTransactions(txStore TxStore, block *btcutil.Block) error {
 			txD.Tx = nil
 			txD.BlockHeight = 0
 			txD.Spent = nil
-			txD.Err = btcdb.ErrTxShaMissing
+			txD.Err = rdddb.ErrTxShaMissing
 		}
 
 		// Unspend the origin transaction output.
@@ -101,7 +101,7 @@ func disconnectTransactions(txStore TxStore, block *btcutil.Block) error {
 // transactions from the point of view of the end of the main chain.  It takes
 // a flag which specifies whether or not fully spent transaction should be
 // included in the results.
-func fetchTxStoreMain(db btcdb.Db, txSet map[btcwire.ShaHash]struct{}, includeSpent bool) TxStore {
+func fetchTxStoreMain(db rdddb.Db, txSet map[rddwire.ShaHash]struct{}, includeSpent bool) TxStore {
 	// Just return an empty store now if there are no requested hashes.
 	txStore := make(TxStore)
 	if len(txSet) == 0 {
@@ -111,10 +111,10 @@ func fetchTxStoreMain(db btcdb.Db, txSet map[btcwire.ShaHash]struct{}, includeSp
 	// The transaction store map needs to have an entry for every requested
 	// transaction.  By default, all the transactions are marked as missing.
 	// Each entry will be filled in with the appropriate data below.
-	txList := make([]*btcwire.ShaHash, 0, len(txSet))
+	txList := make([]*rddwire.ShaHash, 0, len(txSet))
 	for hash := range txSet {
 		hashCopy := hash
-		txStore[hash] = &TxData{Hash: &hashCopy, Err: btcdb.ErrTxShaMissing}
+		txStore[hash] = &TxData{Hash: &hashCopy, Err: rdddb.ErrTxShaMissing}
 		txList = append(txList, &hashCopy)
 	}
 
@@ -144,7 +144,7 @@ func fetchTxStoreMain(db btcdb.Db, txSet map[btcwire.ShaHash]struct{}, includeSp
 		// cause subtle errors, so avoid the potential altogether.
 		txD.Err = txReply.Err
 		if txReply.Err == nil {
-			txD.Tx = btcutil.NewTx(txReply.Tx)
+			txD.Tx = rddutil.NewTx(txReply.Tx)
 			txD.BlockHeight = txReply.Height
 			txD.Spent = make([]bool, len(txReply.TxSpent))
 			copy(txD.Spent, txReply.TxSpent)
@@ -161,7 +161,7 @@ func fetchTxStoreMain(db btcdb.Db, txSet map[btcwire.ShaHash]struct{}, includeSp
 // chain).  Another scenario is where a transaction exists from the point of
 // view of the main chain, but doesn't exist in a side chain that branches
 // before the block that contains the transaction on the main chain.
-func (b *BlockChain) fetchTxStore(node *blockNode, txSet map[btcwire.ShaHash]struct{}) (TxStore, error) {
+func (b *BlockChain) fetchTxStore(node *blockNode, txSet map[rddwire.ShaHash]struct{}) (TxStore, error) {
 	// Get the previous block node.  This function is used over simply
 	// accessing node.parent directly as it will dynamically create previous
 	// block nodes as needed.  This helps allow only the pieces of the chain
@@ -233,11 +233,11 @@ func (b *BlockChain) fetchTxStore(node *blockNode, txSet map[btcwire.ShaHash]str
 // fetchInputTransactions fetches the input transactions referenced by the
 // transactions in the given block from its point of view.  See fetchTxList
 // for more details on what the point of view entails.
-func (b *BlockChain) fetchInputTransactions(node *blockNode, block *btcutil.Block) (TxStore, error) {
+func (b *BlockChain) fetchInputTransactions(node *blockNode, block *rddutil.Block) (TxStore, error) {
 	// Build a map of in-flight transactions because some of the inputs in
 	// this block could be referencing other transactions earlier in this
 	// block which are not yet in the chain.
-	txInFlight := map[btcwire.ShaHash]int{}
+	txInFlight := map[rddwire.ShaHash]int{}
 	transactions := block.Transactions()
 	for i, tx := range transactions {
 		txInFlight[*tx.Sha()] = i
@@ -246,14 +246,14 @@ func (b *BlockChain) fetchInputTransactions(node *blockNode, block *btcutil.Bloc
 	// Loop through all of the transaction inputs (except for the coinbase
 	// which has no inputs) collecting them into sets of what is needed and
 	// what is already known (in-flight).
-	txNeededSet := make(map[btcwire.ShaHash]struct{})
+	txNeededSet := make(map[rddwire.ShaHash]struct{})
 	txStore := make(TxStore)
 	for i, tx := range transactions[1:] {
 		for _, txIn := range tx.MsgTx().TxIn {
 			// Add an entry to the transaction store for the needed
 			// transaction with it set to missing by default.
 			originHash := &txIn.PreviousOutPoint.Hash
-			txD := &TxData{Hash: originHash, Err: btcdb.ErrTxShaMissing}
+			txD := &TxData{Hash: originHash, Err: rdddb.ErrTxShaMissing}
 			txStore[*originHash] = txD
 
 			// It is acceptable for a transaction input to reference
@@ -299,11 +299,11 @@ func (b *BlockChain) fetchInputTransactions(node *blockNode, block *btcutil.Bloc
 // passed transaction from the point of view of the end of the main chain.  It
 // also attempts to fetch the transaction itself so the returned TxStore can be
 // examined for duplicate transactions.
-func (b *BlockChain) FetchTransactionStore(tx *btcutil.Tx) (TxStore, error) {
+func (b *BlockChain) FetchTransactionStore(tx *rddutil.Tx) (TxStore, error) {
 	// Create a set of needed transactions from the transactions referenced
 	// by the inputs of the passed transaction.  Also, add the passed
 	// transaction itself as a way for the caller to detect duplicates.
-	txNeededSet := make(map[btcwire.ShaHash]struct{})
+	txNeededSet := make(map[rddwire.ShaHash]struct{})
 	txNeededSet[*tx.Sha()] = struct{}{}
 	for _, txIn := range tx.MsgTx().TxIn {
 		txNeededSet[txIn.PreviousOutPoint.Hash] = struct{}{}

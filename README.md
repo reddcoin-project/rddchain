@@ -1,44 +1,46 @@
-btcchain
+rddchain
 ========
 
-[![Build Status](https://travis-ci.org/conformal/btcchain.png?branch=master)]
-(https://travis-ci.org/conformal/btcchain)
+[![Build Status](https://travis-ci.org/reddcoin-project/rddchain.png?branch=master)]
+(https://travis-ci.org/reddcoin-project/rddchain) [![Coverage Status]
+(https://coveralls.io/repos/reddcoin-project/rddchain/badge.png?branch=master)]
+(https://coveralls.io/r/reddcoin-project/rddchain?branch=master)
 
-Package btcchain implements bitcoin block handling and chain selection rules.
+Package rddchain implements Reddcoin block handling and chain selection rules.
 The test coverage is currently only around 60%, but will be increasing over
 time. See `test_coverage.txt` for the gocov coverage report.  Alternatively, if
 you are running a POSIX OS, you can run the `cov_report.sh` script for a
-real-time report.  Package btcchain is licensed under the liberal ISC license.
+real-time report.  Package rddchain is licensed under the liberal ISC license.
 
 There is an associated blog post about the release of this package
 [here](https://blog.conformal.com/btcchain-the-bitcoin-chain-package-from-bctd/).
 
 This package is one of the core packages from btcd, an alternative full-node
-implementation of bitcoin which is under active development by Conformal.
+implementation of Reddcoin which is under active development by Conformal.
 Although it was primarily written for btcd, this package has intentionally been
 designed so it can be used as a standalone package for any projects needing to
-handle processing of blocks into the bitcoin block chain.
+handle processing of blocks into the Reddcoin block chain.
 
 ## Documentation
 
-[![GoDoc](https://godoc.org/github.com/conformal/btcchain?status.png)]
-(http://godoc.org/github.com/conformal/btcchain)
+[![GoDoc](https://godoc.org/github.com/reddcoin-project/rddchain?status.png)]
+(http://godoc.org/github.com/reddcoin-project/rddchain)
 
 Full `go doc` style documentation for the project can be viewed online without
 installing this package by using the GoDoc site here:
-http://godoc.org/github.com/conformal/btcchain
+http://godoc.org/github.com/reddcoin-project/rddchain
 
 You can also view the documentation locally once the package is installed with
 the `godoc` tool by running `godoc -http=":6060"` and pointing your browser to
-http://localhost:6060/pkg/github.com/conformal/btcchain
+http://localhost:6060/pkg/github.com/reddcoin-project/rddchain
 
 ## Installation
 
 ```bash
-$ go get github.com/conformal/btcchain
+$ go get github.com/reddcoin-project/rddchain
 ```
 
-## Bitcoin Chain Processing Overview
+## Reddcoin Chain Processing Overview
 
 Before a block is allowed into the block chain, it must go through an intensive
 series of validation rules.  The following list serves as a general outline of
@@ -76,20 +78,20 @@ is by no means exhaustive:
 ## Examples
 
 * [ProcessBlock Example]
-  (http://godoc.org/github.com/conformal/btcchain#example-BlockChain-ProcessBlock)  
+  (http://godoc.org/github.com/reddcoin-project/rddchain#example-BlockChain-ProcessBlock)  
   Demonstrates how to create a new chain instance and use ProcessBlock to
   attempt to attempt add a block to the chain.  This example intentionally
   attempts to insert a duplicate genesis block to illustrate how an invalid
   block is handled.
 
 * [CompactToBig Example]
-  (http://godoc.org/github.com/conformal/btcchain#example-CompactToBig)  
+  (http://godoc.org/github.com/reddcoin-project/rddchain#example-CompactToBig)  
   Demonstrates how to convert the compact "bits" in a block header which
   represent the target difficulty to a big integer and display it using the
   typical hex notation.
 
 * [BigToCompact Example]
-  (http://godoc.org/github.com/conformal/btcchain#example-BigToCompact)  
+  (http://godoc.org/github.com/reddcoin-project/rddchain#example-BigToCompact)  
   Demonstrates how to convert how to convert a target difficulty into the
   compact "bits" in a block header which represent that target difficulty.
 
@@ -120,5 +122,5 @@ signature perform the following:
 ## License
 
 
-Package btcchain is licensed under the [copyfree](http://copyfree.org) ISC
+Package rddchain is licensed under the [copyfree](http://copyfree.org) ISC
 License.

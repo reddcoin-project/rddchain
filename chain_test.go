@@ -2,15 +2,15 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcchain_test
+package rddchain_test
 
 import (
 	"testing"
 
-	"github.com/conformal/btcchain"
-	"github.com/conformal/btcnet"
-	"github.com/conformal/btcutil"
-	"github.com/conformal/btcwire"
+	"github.com/reddcoin-project/rddchain"
+	"github.com/reddcoin-project/rddnet"
+	"github.com/reddcoin-project/rddutil"
+	"github.com/reddcoin-project/rddwire"
 )
 
 // TestHaveBlock tests the HaveBlock API to ensure proper functionality.
@@ -23,7 +23,7 @@ func TestHaveBlock(t *testing.T) {
 		"blk_3A.dat.bz2",
 	}
 
-	var blocks []*btcutil.Block
+	var blocks []*rddutil.Block
 	for _, file := range testFiles {
 		blockTmp, err := loadBlocks(file)
 		if err != nil {
@@ -46,12 +46,12 @@ func TestHaveBlock(t *testing.T) {
 	// Since we're not dealing with the real block chain, disable
 	// checkpoints and set the coinbase maturity to 1.
 	chain.DisableCheckpoints(true)
-	btcchain.TstSetCoinbaseMaturity(1)
+	rddchain.TstSetCoinbaseMaturity(1)
 
-	timeSource := btcchain.NewMedianTime()
+	timeSource := rddchain.NewMedianTime()
 	for i := 1; i < len(blocks); i++ {
 		isOrphan, err := chain.ProcessBlock(blocks[i], timeSource,
-			btcchain.BFNone)
+			rddchain.BFNone)
 		if err != nil {
 			t.Errorf("ProcessBlock fail on block %v: %v\n", i, err)
 			return
@@ -64,8 +64,8 @@ func TestHaveBlock(t *testing.T) {
 	}
 
 	// Insert an orphan block.
-	isOrphan, err := chain.ProcessBlock(btcutil.NewBlock(&Block100000),
-		timeSource, btcchain.BFNone)
+	isOrphan, err := chain.ProcessBlock(rddutil.NewBlock(&Block100000),
+		timeSource, rddchain.BFNone)
 	if err != nil {
 		t.Errorf("Unable to process block: %v", err)
 		return
@@ -81,7 +81,7 @@ func TestHaveBlock(t *testing.T) {
 		want bool
 	}{
 		// Genesis block should be present (in the main chain).
-		{hash: btcnet.MainNetParams.GenesisHash.String(), want: true},
+		{hash: rddnet.MainNetParams.GenesisHash.String(), want: true},
 
 		// Block 3a should be present (on a side chain).
 		{hash: "00000000474284d20067a4d33f6a02284e6ef70764a3a26d6a5b9df52ef663dd", want: true},
@@ -94,7 +94,7 @@ func TestHaveBlock(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		hash, err := btcwire.NewShaHashFromStr(test.hash)
+		hash, err := rddwire.NewShaHashFromStr(test.hash)
 		if err != nil {
 			t.Errorf("NewShaHashFromStr: %v", err)
 			continue

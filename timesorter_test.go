@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcchain_test
+package rddchain_test
 
 import (
 	"reflect"
@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/conformal/btcchain"
+	"github.com/reddcoin-project/rddchain"
 )
 
 // TestTimeSorter tests the timeSorter implementation.
@@ -42,7 +42,7 @@ func TestTimeSorter(t *testing.T) {
 	for i, test := range tests {
 		result := make([]time.Time, len(test.in))
 		copy(result, test.in)
-		sort.Sort(btcchain.TstTimeSorter(result))
+		sort.Sort(rddchain.TstTimeSorter(result))
 		if !reflect.DeepEqual(result, test.want) {
 			t.Errorf("timeSorter #%d got %v want %v", i, result,
 				test.want)

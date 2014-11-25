@@ -2,59 +2,59 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcchain_test
+package rddchain_test
 
 import (
 	"testing"
 
-	"github.com/conformal/btcchain"
+	"github.com/reddcoin-project/rddchain"
 )
 
 // TestErrorCodeStringer tests the stringized output for the ErrorCode type.
 func TestErrorCodeStringer(t *testing.T) {
 	tests := []struct {
-		in   btcchain.ErrorCode
+		in   rddchain.ErrorCode
 		want string
 	}{
-		{btcchain.ErrDuplicateBlock, "ErrDuplicateBlock"},
-		{btcchain.ErrBlockTooBig, "ErrBlockTooBig"},
-		{btcchain.ErrBlockVersionTooOld, "ErrBlockVersionTooOld"},
-		{btcchain.ErrInvalidTime, "ErrInvalidTime"},
-		{btcchain.ErrTimeTooOld, "ErrTimeTooOld"},
-		{btcchain.ErrTimeTooNew, "ErrTimeTooNew"},
-		{btcchain.ErrDifficultyTooLow, "ErrDifficultyTooLow"},
-		{btcchain.ErrUnexpectedDifficulty, "ErrUnexpectedDifficulty"},
-		{btcchain.ErrHighHash, "ErrHighHash"},
-		{btcchain.ErrBadMerkleRoot, "ErrBadMerkleRoot"},
-		{btcchain.ErrBadCheckpoint, "ErrBadCheckpoint"},
-		{btcchain.ErrForkTooOld, "ErrForkTooOld"},
-		{btcchain.ErrCheckpointTimeTooOld, "ErrCheckpointTimeTooOld"},
-		{btcchain.ErrNoTransactions, "ErrNoTransactions"},
-		{btcchain.ErrTooManyTransactions, "ErrTooManyTransactions"},
-		{btcchain.ErrNoTxInputs, "ErrNoTxInputs"},
-		{btcchain.ErrNoTxOutputs, "ErrNoTxOutputs"},
-		{btcchain.ErrTxTooBig, "ErrTxTooBig"},
-		{btcchain.ErrBadTxOutValue, "ErrBadTxOutValue"},
-		{btcchain.ErrDuplicateTxInputs, "ErrDuplicateTxInputs"},
-		{btcchain.ErrBadTxInput, "ErrBadTxInput"},
-		{btcchain.ErrBadCheckpoint, "ErrBadCheckpoint"},
-		{btcchain.ErrMissingTx, "ErrMissingTx"},
-		{btcchain.ErrUnfinalizedTx, "ErrUnfinalizedTx"},
-		{btcchain.ErrDuplicateTx, "ErrDuplicateTx"},
-		{btcchain.ErrOverwriteTx, "ErrOverwriteTx"},
-		{btcchain.ErrImmatureSpend, "ErrImmatureSpend"},
-		{btcchain.ErrDoubleSpend, "ErrDoubleSpend"},
-		{btcchain.ErrSpendTooHigh, "ErrSpendTooHigh"},
-		{btcchain.ErrBadFees, "ErrBadFees"},
-		{btcchain.ErrTooManySigOps, "ErrTooManySigOps"},
-		{btcchain.ErrFirstTxNotCoinbase, "ErrFirstTxNotCoinbase"},
-		{btcchain.ErrMultipleCoinbases, "ErrMultipleCoinbases"},
-		{btcchain.ErrBadCoinbaseScriptLen, "ErrBadCoinbaseScriptLen"},
-		{btcchain.ErrBadCoinbaseValue, "ErrBadCoinbaseValue"},
-		{btcchain.ErrMissingCoinbaseHeight, "ErrMissingCoinbaseHeight"},
-		{btcchain.ErrBadCoinbaseHeight, "ErrBadCoinbaseHeight"},
-		{btcchain.ErrScriptMalformed, "ErrScriptMalformed"},
-		{btcchain.ErrScriptValidation, "ErrScriptValidation"},
+		{rddchain.ErrDuplicateBlock, "ErrDuplicateBlock"},
+		{rddchain.ErrBlockTooBig, "ErrBlockTooBig"},
+		{rddchain.ErrBlockVersionTooOld, "ErrBlockVersionTooOld"},
+		{rddchain.ErrInvalidTime, "ErrInvalidTime"},
+		{rddchain.ErrTimeTooOld, "ErrTimeTooOld"},
+		{rddchain.ErrTimeTooNew, "ErrTimeTooNew"},
+		{rddchain.ErrDifficultyTooLow, "ErrDifficultyTooLow"},
+		{rddchain.ErrUnexpectedDifficulty, "ErrUnexpectedDifficulty"},
+		{rddchain.ErrHighHash, "ErrHighHash"},
+		{rddchain.ErrBadMerkleRoot, "ErrBadMerkleRoot"},
+		{rddchain.ErrBadCheckpoint, "ErrBadCheckpoint"},
+		{rddchain.ErrForkTooOld, "ErrForkTooOld"},
+		{rddchain.ErrCheckpointTimeTooOld, "ErrCheckpointTimeTooOld"},
+		{rddchain.ErrNoTransactions, "ErrNoTransactions"},
+		{rddchain.ErrTooManyTransactions, "ErrTooManyTransactions"},
+		{rddchain.ErrNoTxInputs, "ErrNoTxInputs"},
+		{rddchain.ErrNoTxOutputs, "ErrNoTxOutputs"},
+		{rddchain.ErrTxTooBig, "ErrTxTooBig"},
+		{rddchain.ErrBadTxOutValue, "ErrBadTxOutValue"},
+		{rddchain.ErrDuplicateTxInputs, "ErrDuplicateTxInputs"},
+		{rddchain.ErrBadTxInput, "ErrBadTxInput"},
+		{rddchain.ErrBadCheckpoint, "ErrBadCheckpoint"},
+		{rddchain.ErrMissingTx, "ErrMissingTx"},
+		{rddchain.ErrUnfinalizedTx, "ErrUnfinalizedTx"},
+		{rddchain.ErrDuplicateTx, "ErrDuplicateTx"},
+		{rddchain.ErrOverwriteTx, "ErrOverwriteTx"},
+		{rddchain.ErrImmatureSpend, "ErrImmatureSpend"},
+		{rddchain.ErrDoubleSpend, "ErrDoubleSpend"},
+		{rddchain.ErrSpendTooHigh, "ErrSpendTooHigh"},
+		{rddchain.ErrBadFees, "ErrBadFees"},
+		{rddchain.ErrTooManySigOps, "ErrTooManySigOps"},
+		{rddchain.ErrFirstTxNotCoinbase, "ErrFirstTxNotCoinbase"},
+		{rddchain.ErrMultipleCoinbases, "ErrMultipleCoinbases"},
+		{rddchain.ErrBadCoinbaseScriptLen, "ErrBadCoinbaseScriptLen"},
+		{rddchain.ErrBadCoinbaseValue, "ErrBadCoinbaseValue"},
+		{rddchain.ErrMissingCoinbaseHeight, "ErrMissingCoinbaseHeight"},
+		{rddchain.ErrBadCoinbaseHeight, "ErrBadCoinbaseHeight"},
+		{rddchain.ErrScriptMalformed, "ErrScriptMalformed"},
+		{rddchain.ErrScriptValidation, "ErrScriptValidation"},
 		{0xffff, "Unknown ErrorCode (65535)"},
 	}
 
@@ -72,15 +72,15 @@ func TestErrorCodeStringer(t *testing.T) {
 // TestRuleError tests the error output for the RuleError type.
 func TestRuleError(t *testing.T) {
 	tests := []struct {
-		in   btcchain.RuleError
+		in   rddchain.RuleError
 		want string
 	}{
 		{
-			btcchain.RuleError{Description: "duplicate block"},
+			rddchain.RuleError{Description: "duplicate block"},
 			"duplicate block",
 		},
 		{
-			btcchain.RuleError{Description: "human-readable error"},
+			rddchain.RuleError{Description: "human-readable error"},
 			"human-readable error",
 		},
 	}

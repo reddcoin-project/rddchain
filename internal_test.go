@@ -3,19 +3,19 @@
 // license that can be found in the LICENSE file.
 
 /*
-This test file is part of the btcchain package rather than than the
-btcchain_test package so it can bridge access to the internals to properly test
+This test file is part of the rddchain package rather than than the
+rddchain_test package so it can bridge access to the internals to properly test
 cases which are either not possible or can't reliably be tested via the public
 interface.  The functions are only exported while the tests are being run.
 */
 
-package btcchain
+package rddchain
 
 import (
 	"sort"
 	"time"
 
-	"github.com/conformal/btcutil"
+	"github.com/reddcoin-project/rddutil"
 )
 
 // TstSetCoinbaseMaturity makes the ability to set the coinbase maturity
@@ -32,7 +32,7 @@ func TstTimeSorter(times []time.Time) sort.Interface {
 
 // TstCheckSerializedHeight makes the internal checkSerializedHeight function
 // available to the test package.
-func TstCheckSerializedHeight(coinbaseTx *btcutil.Tx, wantHeight int64) error {
+func TstCheckSerializedHeight(coinbaseTx *rddutil.Tx, wantHeight int64) error {
 	return checkSerializedHeight(coinbaseTx, wantHeight)
 }
 

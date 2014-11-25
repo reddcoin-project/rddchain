@@ -2,19 +2,19 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcchain_test
+package rddchain_test
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
 
-	"github.com/conformal/btcchain"
-	"github.com/conformal/btcdb"
-	_ "github.com/conformal/btcdb/ldb"
-	_ "github.com/conformal/btcdb/memdb"
-	"github.com/conformal/btcnet"
-	"github.com/conformal/btcutil"
+	"github.com/reddcoin-project/rddchain"
+	"github.com/reddcoin-project/rdddb"
+	_ "github.com/reddcoin-project/rdddb/ldb"
+	_ "github.com/reddcoin-project/rdddb/memdb"
+	"github.com/reddcoin-project/rddnet"
+	"github.com/reddcoin-project/rddutil"
 )
 
 // testDbType is the database backend type to use for the tests.
@@ -36,7 +36,7 @@ func fileExists(name string) bool {
 // isSupportedDbType returns whether or not the passed database type is
 // currently supported.
 func isSupportedDbType(dbType string) bool {
-	supportedDBs := btcdb.SupportedDBs()
+	supportedDBs := rdddb.SupportedDBs()
 	for _, sDbType := range supportedDBs {
 		if dbType == sDbType {
 			return true
@@ -49,17 +49,17 @@ func isSupportedDbType(dbType string) bool {
 // chainSetup is used to create a new db and chain instance with the genesis
 // block already inserted.  In addition to the new chain instnce, it returns
 // a teardown function the caller should invoke when done testing to clean up.
-func chainSetup(dbName string) (*btcchain.BlockChain, func(), error) {
+func chainSetup(dbName string) (*rddchain.BlockChain, func(), error) {
 	if !isSupportedDbType(testDbType) {
 		return nil, nil, fmt.Errorf("unsupported db type %v", testDbType)
 	}
 
 	// Handle memory database specially since it doesn't need the disk
 	// specific handling.
-	var db btcdb.Db
+	var db rdddb.Db
 	var teardown func()
 	if testDbType == "memdb" {
-		ndb, err := btcdb.CreateDB(testDbType)
+		ndb, err := rdddb.CreateDB(testDbType)
 		if err != nil {
 			return nil, nil, fmt.Errorf("error creating db: %v", err)
 		}
@@ -83,7 +83,7 @@ func chainSetup(dbName string) (*btcchain.BlockChain, func(), error) {
 		// Create a new database to store the accepted blocks into.
 		dbPath := filepath.Join(testDbRoot, dbName)
 		_ = os.RemoveAll(dbPath)
-		ndb, err := btcdb.CreateDB(testDbType, dbPath)
+		ndb, err := rdddb.CreateDB(testDbType, dbPath)
 		if err != nil {
 			return nil, nil, fmt.Errorf("error creating db: %v", err)
 		}
@@ -103,7 +103,7 @@ func chainSetup(dbName string) (*btcchain.BlockChain, func(), error) {
 
 	// Insert the main network genesis block.  This is part of the initial
 	// database setup.
-	genesisBlock := btcutil.NewBlock(btcnet.MainNetParams.GenesisBlock)
+	genesisBlock := rddutil.NewBlock(rddnet.MainNetParams.GenesisBlock)
 	_, err := db.InsertBlock(genesisBlock)
 	if err != nil {
 		teardown()
@@ -111,6 +111,6 @@ func chainSetup(dbName string) (*btcchain.BlockChain, func(), error) {
 		return nil, nil, err
 	}
 
-	chain := btcchain.New(db, &btcnet.MainNetParams, nil)
+	chain := rddchain.New(db, &rddnet.MainNetParams, nil)
 	return chain, teardown, nil
 }

@@ -2,15 +2,15 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcchain
+package rddchain
 
 import (
 	"fmt"
 
-	"github.com/conformal/btcnet"
-	"github.com/conformal/btcscript"
-	"github.com/conformal/btcutil"
-	"github.com/conformal/btcwire"
+	"github.com/reddcoin-project/rddnet"
+	"github.com/reddcoin-project/rddscript"
+	"github.com/reddcoin-project/rddutil"
+	"github.com/reddcoin-project/rddwire"
 )
 
 // CheckpointConfirmations is the number of blocks before the end of the current
@@ -18,11 +18,11 @@ import (
 const CheckpointConfirmations = 2016
 
 // newShaHashFromStr converts the passed big-endian hex string into a
-// btcwire.ShaHash.  It only differs from the one available in btcwire in that
+// rddwire.ShaHash.  It only differs from the one available in rddwire in that
 // it ignores the error since it will only (and must only) be called with
 // hard-coded, and therefore known good, hashes.
-func newShaHashFromStr(hexStr string) *btcwire.ShaHash {
-	sha, _ := btcwire.NewShaHashFromStr(hexStr)
+func newShaHashFromStr(hexStr string) *rddwire.ShaHash {
+	sha, _ := rddwire.NewShaHashFromStr(hexStr)
 	return sha
 }
 
@@ -36,7 +36,7 @@ func (b *BlockChain) DisableCheckpoints(disable bool) {
 // Checkpoints returns a slice of checkpoints (regardless of whether they are
 // already known).  When checkpoints are disabled or there are no checkpoints
 // for the active network, it will return nil.
-func (b *BlockChain) Checkpoints() []btcnet.Checkpoint {
+func (b *BlockChain) Checkpoints() []rddnet.Checkpoint {
 	if b.noCheckpoints || len(b.netParams.Checkpoints) == 0 {
 		return nil
 	}
@@ -47,7 +47,7 @@ func (b *BlockChain) Checkpoints() []btcnet.Checkpoint {
 // LatestCheckpoint returns the most recent checkpoint (regardless of whether it
 // is already known).  When checkpoints are disabled or there are no checkpoints
 // for the active network, it will return nil.
-func (b *BlockChain) LatestCheckpoint() *btcnet.Checkpoint {
+func (b *BlockChain) LatestCheckpoint() *rddnet.Checkpoint {
 	if b.noCheckpoints || len(b.netParams.Checkpoints) == 0 {
 		return nil
 	}
@@ -59,7 +59,7 @@ func (b *BlockChain) LatestCheckpoint() *btcnet.Checkpoint {
 // verifyCheckpoint returns whether the passed block height and hash combination
 // match the hard-coded checkpoint data.  It also returns true if there is no
 // checkpoint data for the passed block height.
-func (b *BlockChain) verifyCheckpoint(height int64, hash *btcwire.ShaHash) bool {
+func (b *BlockChain) verifyCheckpoint(height int64, hash *rddwire.ShaHash) bool {
 	if b.noCheckpoints || len(b.netParams.Checkpoints) == 0 {
 		return true
 	}
@@ -83,7 +83,7 @@ func (b *BlockChain) verifyCheckpoint(height int64, hash *btcwire.ShaHash) bool 
 // available in the downloaded portion of the block chain and returns the
 // associated block.  It returns nil if a checkpoint can't be found (this should
 // really only happen for blocks before the first checkpoint).
-func (b *BlockChain) findPreviousCheckpoint() (*btcutil.Block, error) {
+func (b *BlockChain) findPreviousCheckpoint() (*rddutil.Block, error) {
 	if b.noCheckpoints || len(b.netParams.Checkpoints) == 0 {
 		return nil, nil
 	}
@@ -187,13 +187,13 @@ func (b *BlockChain) findPreviousCheckpoint() (*btcutil.Block, error) {
 
 // isNonstandardTransaction determines whether a transaction contains any
 // scripts which are not one of the standard types.
-func isNonstandardTransaction(tx *btcutil.Tx) bool {
+func isNonstandardTransaction(tx *rddutil.Tx) bool {
 	// TODO(davec): Should there be checks for the input signature scripts?
 
 	// Check all of the output public key scripts for non-standard scripts.
 	for _, txOut := range tx.MsgTx().TxOut {
-		scriptClass := btcscript.GetScriptClass(txOut.PkScript)
-		if scriptClass == btcscript.NonStandardTy {
+		scriptClass := rddscript.GetScriptClass(txOut.PkScript)
+		if scriptClass == rddscript.NonStandardTy {
 			return true
 		}
 	}
@@ -215,7 +215,7 @@ func isNonstandardTransaction(tx *btcutil.Tx) bool {
 //
 // The intent is that candidates are reviewed by a developer to make the final
 // decision and then manually added to the list of checkpoints for a network.
-func (b *BlockChain) IsCheckpointCandidate(block *btcutil.Block) (bool, error) {
+func (b *BlockChain) IsCheckpointCandidate(block *rddutil.Block) (bool, error) {
 	// Checkpoints must be enabled.
 	if b.noCheckpoints {
 		return false, fmt.Errorf("checkpoints are disabled")
